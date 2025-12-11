@@ -11,8 +11,6 @@ pub fn price_option(
     }
 }
 
-/// Placeholder for the call price.
-/// Will later implement:
 ///   S * N(d1) − K * e^(−rT) * N(d2)
 fn price_call(
     option: &Option,
@@ -38,8 +36,6 @@ fn price_call(
     s * normal_cdf(d1) - discounted_strike * normal_cdf(d2)
 }
 
-/// Placeholder for the put price.
-/// Will later implement:
 ///   K * e^(−rT) * N(−d2) − S * N(−d1)
 fn price_put(
     option: &Option,
