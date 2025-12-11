@@ -1,4 +1,4 @@
-use crate::models::{market_param::MarketParams, option::Option, option_type::OptionType, underlying_asset::UnderlyingAsset};
+use crate::{models::{market_param::MarketParams, option::Option, option_type::OptionType, underlying_asset::UnderlyingAsset}, stats::normal::normal_cdf};
 
 // Black-Scholes engine (skeleton only).
 // This module defines the public entry point for option pricing.
@@ -11,26 +11,60 @@ pub fn price_option(
     market: &MarketParams,
 ) -> f64 {
     match option.option_type {
-        OptionType::Call => price_call_sub(),
-        OptionType::Put  => price_put_sub(),
+        OptionType::Call => price_call(option, underlying, market),
+        OptionType::Put  => price_put(option, underlying, market),
     }
 }
 
 /// Placeholder for the call price.
 /// Will later implement:
 ///   S * N(d1) − K * e^(−rT) * N(d2)
-fn price_call_sub() -> f64 {
-    0.0
+fn price_call(
+    option: &Option,
+    underlying: &UnderlyingAsset,
+    market: &MarketParams,
+) -> f64 {
+    let s = underlying.spot;
+    let k = option.strike;
+    let r = market.rate;
+    let t = option.time_to_expiry;
+
+    let d1 = standardized_moneyness(option, underlying, market);
+    let d2 = standardized_moneyness_forward(option, underlying, market);
+
+    // C = S * N(d1) − K * e^(−rT) * N(d2)
+    // How much the strike is worth if you bring it from the future to the present.
+    // Why -> Because the strike is payed in the futre (date of expiry)
+    let discounted_strike = k * (-r * t).exp();
+
+    // normal_cdf(d1) -> Porbability of moving in favour of CALL now.
+    // noraml_cdf(d2) -> Probability of finishing ITM on expiry time.
+    // what you can win - what will cost you to win = Value of call
+    s * normal_cdf(d1) - discounted_strike * normal_cdf(d2)
 }
 
 /// Placeholder for the put price.
 /// Will later implement:
 ///   K * e^(−rT) * N(−d2) − S * N(−d1)
-fn price_put_sub() -> f64 {
-    0.0
+fn price_put(
+    option: &Option,
+    underlying: &UnderlyingAsset,
+    market: &MarketParams,
+) -> f64 {
+    let s = underlying.spot;
+    let k = option.strike;
+    let r = market.rate;
+    let t = option.time_to_expiry;
+
+    let d1 = standardized_moneyness(option, underlying, market);
+    let d2 = standardized_moneyness_forward(option, underlying, market);
+
+    let discounted_strike = k * (-r * t).exp();
+
+    discounted_strike * normal_cdf(-d2) - s * normal_cdf(-d1)
 }
 
-/// d1 — also called “standardized moneyness, z-index...”.
+/// d1 — also called “standardized moneyness, z-score...”.
 /// It measures how many standard deviations the log-price is above the strike
 /// once drift and volatility scaling are taken into account.
 /// This is the core input to all Black-Scholes Greeks.
