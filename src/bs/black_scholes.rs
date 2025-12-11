@@ -61,7 +61,7 @@ fn price_put(
 /// This is the core input to all Black-Scholes Greeks.
 /// Its normaly a number between -3 / +3.
 /// If we are operating a call, a positive d1 is good for us.
-fn standardized_moneyness(
+pub fn standardized_moneyness(
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
@@ -92,7 +92,7 @@ fn standardized_moneyness(
 /// d2 — also called “forward-adjusted standardized moneyness”.
 /// It represents the risk-neutral probability-weighted distance to the strike.
 /// Financially, d2 determines the probability of expiring ITM under the model.
-fn standardized_moneyness_forward(
+pub fn standardized_moneyness_forward(
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams, 
