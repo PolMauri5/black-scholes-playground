@@ -1,10 +1,5 @@
 use crate::{models::{market_param::MarketParams, option::Option, option_type::OptionType, underlying_asset::UnderlyingAsset}, stats::normal::normal_cdf};
 
-// Black-Scholes engine (skeleton only).
-// This module defines the public entry point for option pricing.
-// At this stage, everything is a placeholder: no formulas, no probability distributions.
-// Future sprints will introduce d1/d2 logic, normal CDF/PDF, and the full closed-form model.
-
 pub fn price_option(
     option: &Option,
     underlying: &UnderlyingAsset,
