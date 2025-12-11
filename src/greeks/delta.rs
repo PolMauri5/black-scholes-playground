@@ -12,3 +12,12 @@ pub fn delta_call(
     let d1 = standardized_moneyness(option, underlying, market);
     normal_cdf(d1)
 }
+
+pub fn delta_put(
+    option: &Option,
+    underlying: &UnderlyingAsset,
+    market: &MarketParams,
+) -> f64 {
+    let d1 = standardized_moneyness(option, underlying, market);
+    normal_cdf(d1) - 1.0
+}
