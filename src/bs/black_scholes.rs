@@ -25,7 +25,7 @@ fn price_call(
     let t = option.time_to_expiry[i];
     let sigma = option.implied_volatility[i];
 
-    if s <= 0.0 || t <= 0.0 || sigma <= 0.0 {
+    if s <= 0.0 || t <= 0.0 || sigma <= 0.0 || k <= 0.0 {
         return 0.0;
     }
 
@@ -60,6 +60,10 @@ fn price_put(
     let r = market.rate;
     let t = option.time_to_expiry[i];
     let sigma = option.implied_volatility[i];
+
+    if s <= 0.0 || t <= 0.0 || sigma <= 0.0 || k <= 0.0 {
+        return 0.0;
+    }
 
     let time = t.sqrt();
     let log_moneyness = (s / k).ln();
