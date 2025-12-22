@@ -5,19 +5,21 @@ use crate::stats::normal::normal_cdf;
 /// Δ -> Delta is how much is premium going to move when
 /// the undelying asset (spot) moves 1 point 
 pub fn delta_call(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
-    let d1 = standardized_moneyness(option, underlying, market);
+    let d1 = standardized_moneyness(i, option, underlying, market);
     normal_cdf(d1)
 }
 
 pub fn delta_put(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
-    let d1 = standardized_moneyness(option, underlying, market);
+    let d1 = standardized_moneyness(i, option, underlying, market);
     normal_cdf(d1) - 1.0
 }

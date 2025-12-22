@@ -1,29 +1,41 @@
 use crate::{models::{market_param::MarketParams, option::Option, option_type::OptionType, underlying_asset::UnderlyingAsset}, stats::normal::normal_cdf};
 
 pub fn price_option(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
-    match option.option_type {
-        OptionType::Call => price_call(option, underlying, market),
-        OptionType::Put  => price_put(option, underlying, market),
+    match option.option_type[i] {
+        OptionType::Call => price_call(i, option, underlying, market),
+        OptionType::Put  => price_put(i, option, underlying, market),
     }
 }
 
 ///   S * N(d1) − K * e^(−rT) * N(d2)
 fn price_call(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
     let s = underlying.spot;
-    let k = option.strike;
+    let k = option.strike[i];
     let r = market.rate;
-    let t = option.time_to_expiry;
+    let t = option.time_to_expiry[i];
+    let sigma = option.implied_volatility[i];
 
-    let d1 = standardized_moneyness(option, underlying, market);
-    let d2 = standardized_moneyness_forward(option, underlying, market);
+    if s <= 0.0 || t <= 0.0 || sigma <= 0.0 {
+        return 0.0;
+    }
+
+    let time = t.sqrt();
+    let log_moneyness = (s / k).ln();
+    let carry_term = (r + 0.5 * sigma * sigma) * t;
+    let d1 = (log_moneyness + carry_term) / (sigma * time);
+
+    let vol_shock = sigma * time;
+    let d2 = d1 - vol_shock;
 
     // C = S * N(d1) − K * e^(−rT) * N(d2)
     // How much the strike is worth if you bring it from the future to the present.
@@ -38,17 +50,25 @@ fn price_call(
 
 ///   K * e^(−rT) * N(−d2) − S * N(−d1)
 fn price_put(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
     let s = underlying.spot;
-    let k = option.strike;
+    let k = option.strike[i];
     let r = market.rate;
-    let t = option.time_to_expiry;
+    let t = option.time_to_expiry[i];
+    let sigma = option.implied_volatility[i];
 
-    let d1 = standardized_moneyness(option, underlying, market);
-    let d2 = standardized_moneyness_forward(option, underlying, market);
+    let time = t.sqrt();
+    let log_moneyness = (s / k).ln();
+    let carry_term = (r + 0.5 * sigma * sigma) * t;
+
+    let d1 = (log_moneyness + carry_term) / (sigma * time); 
+
+    let vol_shock = sigma * time;
+    let d2 = d1 - vol_shock;
 
     let discounted_strike = k * (-r * t).exp();
 
@@ -62,16 +82,17 @@ fn price_put(
 /// Its normaly a number between -3 / +3.
 /// If we are operating a call, a positive d1 is good for us.
 pub fn standardized_moneyness(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
     let s = underlying.spot;
-    let k = option.strike;
+    let k = option.strike[i];
     let r = market.rate;
     // IV: Implied volatility.
-    let sigma = market.volatility;
-    let t = option.time_to_expiry;
+    let sigma = option.implied_volatility[i];
+    let t = option.time_to_expiry[i];
 
     if sigma <= 0.0 || t <= 0.0 {
         return 0.0;
@@ -93,18 +114,19 @@ pub fn standardized_moneyness(
 /// It represents the risk-neutral probability-weighted distance to the strike.
 /// Financially, d2 determines the probability of expiring ITM under the model.
 pub fn standardized_moneyness_forward(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams, 
 ) -> f64 {
-    let sigma = market.volatility;
-    let t = option.time_to_expiry;
+    let sigma = option.implied_volatility[i];
+    let t = option.time_to_expiry[i];
 
     if sigma <= 0.0 || t <= 0.0 {
         return 0.0;
     }
 
-    let d1 = standardized_moneyness(option, underlying, market);
+    let d1 = standardized_moneyness(i, option, underlying, market);
 
     // This represents one "volatility shock" over the whol horizon.
     let vol_shock = sigma * t.sqrt();

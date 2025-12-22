@@ -4,22 +4,23 @@ use crate::{bs::{standardized_moneyness, standardized_moneyness_forward}, models
 /// passage of time, assuming all other parameters stay constant.
 /// Call Theta is usually negative: time hurts the buyer.
 pub fn theta_call(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
     let s = underlying.spot;
-    let k = option.strike;
+    let k = option.strike[i];
     let r = market.rate;
-    let sigma = market.volatility;
-    let t = option.time_to_expiry;
+    let sigma = option.implied_volatility[i];
+    let t = option.time_to_expiry[i];
 
     if sigma <= 0.0 || t <= 0.0 {
         return 0.0;
     }
 
-    let d1 = standardized_moneyness(option, underlying, market);
-    let d2 = standardized_moneyness_forward(option, underlying, market);
+    let d1 = standardized_moneyness(i, option, underlying, market);
+    let d2 = standardized_moneyness_forward(i, option, underlying, market);
 
     let discounted_strike = k * (-r * t).exp();
 
@@ -33,22 +34,23 @@ pub fn theta_call(
 }
 
 pub fn theta_put(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
     let s = underlying.spot;
-    let k = option.strike;
+    let k = option.strike[i];
     let r = market.rate;
-    let sigma = market.volatility;
-    let t = option.time_to_expiry;
+    let sigma = option.implied_volatility[i];
+    let t = option.time_to_expiry[i];
 
     if sigma <= 0.0 || t <= 0.0 {
         return 0.0;
     }
 
-    let d1 = standardized_moneyness(option, underlying, market);
-    let d2 = standardized_moneyness_forward(option, underlying, market);
+    let d1 = standardized_moneyness(i, option, underlying, market);
+    let d2 = standardized_moneyness_forward(i, option, underlying, market);
 
     let discounted_strike = k * (-r * t).exp();
 

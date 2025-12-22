@@ -6,19 +6,20 @@ use crate::{bs::standardized_moneyness_forward, models::{market_param::MarketPar
 ///     increases the Call premium by approximately +0.25.
 /// Calls gain value when interest rates go up.
 pub fn rho_call(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
-    let k = option.strike;
+    let k = option.strike[i];
     let r = market.rate;
-    let t = option.time_to_expiry;
+    let t = option.time_to_expiry[i];
 
     if t <= 0.0 {
         return 0.0;
     }
 
-    let d2 = standardized_moneyness_forward(option, underlying, market);
+    let d2 = standardized_moneyness_forward(i, option, underlying, market);
     let discounted_strike = k * (-r * t).exp();
 
     // Rho_call = K * T * e^(-rT) * N(d2)
@@ -30,19 +31,20 @@ pub fn rho_call(
 /// Interpretation:
 ///     Rho_put = change in PUT premium for +1% increase in interest rates.
 pub fn rho_put(
+    i: usize,
     option: &Option,
     underlying: &UnderlyingAsset,
     market: &MarketParams,
 ) -> f64 {
-    let k = option.strike;
+    let k = option.strike[i];
     let r = market.rate;
-    let t = option.time_to_expiry;
+    let t = option.time_to_expiry[i];
 
     if t <= 0.0 {
         return 0.0;
     }
 
-    let d2 = standardized_moneyness_forward(option, underlying, market);
+    let d2 = standardized_moneyness_forward(i, option, underlying, market);
     let discounted_strike = k * (-r * t).exp();
 
     // Rho_put = -K * T * e^(-rT) * N(-d2)
