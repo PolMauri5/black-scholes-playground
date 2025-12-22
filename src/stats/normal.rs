@@ -19,26 +19,27 @@ pub fn normal_cdf(x: f64) -> f64 {
     // the curve very close to the true normal CDF.
     let b1 =  0.319381530;
     let b2 = -0.356563782;
-    let b3 =  0.781257088;
+    let b3 =  1.781257088;
     let b4 = -1.821255978;
     let b5 =  1.330274429;
     let p  =  0.2316419;
     let c2 =  0.3989423; // ≈ 1 / sqrt(2π), scaling factor for the normal pdf
 
+    let z = x.abs();
+    let t = 1.0 / (1.0 + p * z);
+
+    let poly = b1
+        + t * (b2
+        + t * (b3
+        + t * (b4
+        + t * b5)));
+
+    let pdf = c2 * (-z * z / 2.0).exp();
+    let cdf_pos = 1.0 - pdf * t * poly;
+
     if x >= 0.0 {
-        // t is a transformed version of x that keeps the polynominal stable.
-        let t = 1.0 / (1.0 + p * x);
-
-        let poly = b1
-                    + t * (b2
-                    + t * (b3
-                    + t * (b4
-                    + t * b5)));
-
-        let pdf_approx = c2 * (-x * x / 2.0).exp();
-        1.0 - pdf_approx * t * poly
+        cdf_pos
     } else {
-        // For negative x, use symmeytr
-        1.0 - normal_cdf(-x)
+        1.0 - cdf_pos
     }
 }
