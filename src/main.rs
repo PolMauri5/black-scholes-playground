@@ -1,6 +1,7 @@
 #![allow(warnings)]
 
-use std::time::Instant;
+use core::num;
+use std::{sync::Arc, thread::spawn, time::Instant};
 use rand::Rng;
 
 use crate::{
@@ -57,15 +58,49 @@ fn main() {
         option_type: types,
     };
 
+    let option = Arc::new(option);
+    let underlying = Arc::new(underlying);
+    let market = Arc::new(market);
+
+    let num_threads = 5;
+    let chunk_size = n / num_threads;
+    let mut handles = Vec::with_capacity(num_threads);
+
     let start = Instant::now();
 
+    for thread_id in 0..num_threads {
+        let option = Arc::clone(&option);
+        let underlying = Arc::clone(&underlying);
+        let market = Arc::clone(&market);
+
+        let start_idx = thread_id * chunk_size;
+        let end_idx = if thread_id == num_threads - 1 {
+            n
+        } else {
+            start_idx + chunk_size
+        };
+
+        let handle = spawn(move || {
+            let mut local_prices = Vec::with_capacity(end_idx - start_idx);
+
+            for i in start_idx..end_idx {
+                local_prices.push(price_option(i, &option, &underlying, &market));
+            }
+
+            local_prices
+        });
+
+        handles.push(handle);
+    }
+
+    // Collect results
     let mut prices = Vec::with_capacity(n);
-    for i in 0..n {
-        prices.push(price_option(i, &option, &underlying, &market));
+    for handle in handles {
+        let mut local = handle.join().unwrap();
+        prices.append(&mut local);
     }
 
     let elapsed = start.elapsed();
-
     println!("Elapsed time: {:.3?}", elapsed);
 
     for i in 0..10 {
